@@ -10,7 +10,7 @@ por escrito do autor. Veja o arquivo LICENSE.
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tap Tempo Trainer v15.3</title>
+<title>Tap Tempo Trainer v16.2</title>
 
 <!--
 v15.3 — ícones e manifest em arquivos, ao lado do index.html.
@@ -727,6 +727,83 @@ border:1px solid rgba(255,255,255,.035);
 pointer-events:none;
 }
 
+/*
+v16.0 — BUZINA (só no modo AUTO)
+
+No AUTO o TAP vira volante de verdade e ganha a buzina no meio.
+Os taps no aro (fora da buzina) são os tempos; a buzina é o
+tempo 1 e escolhe a fórmula que estiver escrita nela.
+
+A buzina tem 46% do TAP: sobra um aro de uns 40px pra tapear, e
+ela fica grande o bastante pro polegar acertar sem procurar. O
+que ela mostra:
+  AUTO         ainda sem fórmula escolhida
+  3/4 ciano    a fórmula escolhida (em repouso)
+  2/4 branco   a contagem desde a última buzina, enquanto tapeia
+*/
+#tapRotulo{
+pointer-events:none;
+}
+
+#buzina{
+display:none;
+position:absolute;
+left:50%;
+top:50%;
+width:46%;
+height:46%;
+transform:translate(-50%,-50%);
+border-radius:50%;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:2px;
+background:radial-gradient(circle at 50% 30%, #262626 0%, #181818 55%, #0f0f0f 100%);
+border:1px solid #333;
+box-shadow:
+0 0 0 3px #0a0a0a,
+0 3px 8px rgba(0,0,0,.85),
+inset 0 1px 0 rgba(255,255,255,.07);
+pointer-events:none;
+transition:box-shadow .05s ease, background .05s ease;
+}
+
+#tap.auto #buzina{ display:flex; }
+
+/* no AUTO, o nome sobe pro alto do aro, como a marca de um volante */
+#tap.auto #tapRotulo{
+position:absolute;
+top:9%;
+left:0;
+right:0;
+font-size:12px;
+letter-spacing:3px;
+color:#8a8a8a;
+}
+
+.buzinaIcone{
+width:17px;
+height:11px;
+color:#6a6a6a;
+}
+
+#buzinaTexto{
+font-size:21px;
+font-weight:bold;
+line-height:1;
+font-variant-numeric:tabular-nums;
+color:#fff;
+}
+
+#buzina.escolhida #buzinaTexto{ color:var(--acento); }
+
+#buzina.vazia #buzinaTexto{
+font-size:11px;
+font-weight:normal;
+letter-spacing:2px;
+color:#8a8a8a;
+}
+
 #tap.active{
 transform:scale(0.95);
 background:#1a1a1a;
@@ -737,6 +814,369 @@ box-shadow:0 0 25px var(--good);
 Tap muito fora da curva: mesmo brilho, em vermelho.
 É só aviso — o cálculo recebe o tap normalmente.
 */
+/* v16.1 — AUTO 2: enquanto tapeia, a buzina mostra o número do tempo */
+#buzina.numero #buzinaTexto{
+font-size:27px;
+}
+
+#buzina.passou #buzinaTexto{
+font-size:19px;
+color:#777;
+}
+
+/*
+v16.1 — SELETOR DE COMPASSO NA PÁGINA
+
+O <select> do compasso fica escondido (ele só guarda a escolha);
+quem aparece é este botão, do mesmo tamanho do seletor de
+subdivisão ao lado. Mostra a fórmula como numa partitura — o
+numerador em cima do denominador — ou AUTO em cima do número do
+modo. A setinha diz que ele abre uma lista.
+*/
+.seletorOculto{
+display:none;
+}
+
+#colCompasso #meterBtn{
+position:relative;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:1px;
+height:37px;
+margin:0;
+padding:0 9px 0 0;
+background:#1a1a1a;
+border:1px solid var(--line);
+border-radius:8px;
+color:#fff;
+line-height:1;
+font-variant-numeric:tabular-nums;
+transition:background .12s ease, border-color .12s ease;
+}
+
+#meterBtnNum,
+#meterBtnDen{
+font-size:14px;
+font-weight:bold;
+line-height:13px;
+}
+
+#meterBtnDen{
+color:#b5b5b5;
+}
+
+#meterBtn.modoAuto #meterBtnNum{
+font-size:9px;
+letter-spacing:1.5px;
+line-height:10px;
+color:#cfcfcf;
+}
+
+#meterBtn.modoAuto #meterBtnDen{
+font-size:15px;
+line-height:15px;
+color:#fff;
+}
+
+.meterSeta{
+position:absolute;
+right:5px;
+top:50%;
+width:7px;
+height:5px;
+margin-top:-2px;
+color:#8a8a8a;
+transition:transform .13s ease;
+}
+
+/* aberto: clareia de leve e a setinha vira pra cima */
+#colCompasso #meterBtn.aberto{
+background:#232323;
+border-color:#3a3a3a;
+}
+
+#meterBtn.aberto .meterSeta{
+transform:rotate(180deg);
+}
+
+/*
+O painel: abre dentro da barra fixa, logo abaixo do botão, com
+uma setinha apontando pra ele. Cada grupo tem um título no mesmo
+estilo dos títulos de painel da página, e as fórmulas viram
+pastilhas de 5 por linha.
+
+A escolhida acende em verde, como os botões ligados; apertar uma
+pastilha só clareia em cinza, a resposta de toque de sempre.
+*/
+.painelEscolha{
+position:absolute;
+z-index:40;
+width:278px;
+max-width:calc(100vw - 16px);
+background:linear-gradient(180deg, #181818 0%, #0e0e0e 100%);
+border:1px solid #2c2c2c;
+border-radius:14px;
+box-shadow:0 16px 36px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05);
+text-align:left;
+opacity:0;
+transform:translateY(-6px) scale(.97);
+transform-origin:top right;
+transition:opacity .13s ease, transform .13s ease;
+}
+
+.painelEscolha.aberto{
+opacity:1;
+transform:none;
+}
+
+.painelEscolha[hidden]{
+display:none;
+}
+
+.cpSeta{
+position:absolute;
+top:-6px;
+width:11px;
+height:11px;
+background:#181818;
+border-left:1px solid #2c2c2c;
+border-top:1px solid #2c2c2c;
+transform:rotate(45deg);
+}
+
+.cpConteudo{
+overflow-y:auto;
+overscroll-behavior:contain;
+padding:12px 12px 2px;
+}
+
+.cpTitulo{
+font-size:10px;
+letter-spacing:2px;
+color:var(--dim);
+text-transform:uppercase;
+margin:0 2px 7px;
+}
+
+.cpGrade{
+display:grid;
+grid-template-columns:repeat(5, 1fr);
+gap:6px;
+margin-bottom:12px;
+}
+
+.cpGrade_detectar{
+grid-template-columns:1fr 1fr;
+}
+
+.cpChip{
+margin:0;
+padding:0;
+min-width:0;
+height:50px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:1px;
+background:linear-gradient(180deg, #202020, #161616);
+border:1px solid #2a2a2a;
+border-radius:10px;
+color:#f0f0f0;
+line-height:1;
+font-variant-numeric:tabular-nums;
+transition:background .15s ease;
+}
+
+.cpChip:active{
+background:#2c2c2c;
+transition:background .03s ease;
+}
+
+.cpNum,
+.cpDen{
+font-size:17px;
+font-weight:bold;
+line-height:17px;
+}
+
+.cpDen{
+color:#9a9a9a;
+}
+
+.cpChip.sel{
+background:#0a2a1a;
+border-color:var(--good);
+color:var(--good);
+}
+
+.cpChip.sel .cpDen{
+color:var(--good);
+opacity:.75;
+}
+
+/* as duas pastilhas de detectar: ícone da buzina, nome e o que fazem */
+.cpChip.cpAuto{
+height:60px;
+gap:3px;
+}
+
+.cpBuzina{
+width:17px;
+height:11px;
+color:#7a7a7a;
+}
+
+.cpAutoNome{
+font-size:13px;
+font-weight:bold;
+letter-spacing:1px;
+}
+
+.cpAutoDesc{
+font-size:10px;
+color:var(--dim);
+}
+
+.cpChip.sel .cpBuzina,
+.cpChip.sel .cpAutoDesc{
+color:var(--good);
+}
+
+/*
+v16.2 — SUBDIVISÃO NA PÁGINA
+
+O botão tem o mesmo desenho do botão do compasso, e mostra as
+figuras de um tempo (desenhadas em SVG, iguais em todo celular).
+O painel abre pela esquerda, porque o botão fica à esquerda do
+RESET, e tem as quatro subdivisões em pastilhas de duas colunas:
+as figuras, o nome e quantos cliques cabem no tempo.
+*/
+#subdivBtn{
+position:relative;
+display:flex;
+align-items:center;
+justify-content:center;
+height:37px;
+margin:0;
+padding:0 9px 0 0;
+background:#1a1a1a;
+border:1px solid var(--line);
+border-radius:8px;
+color:#fff;
+transition:background .12s ease, border-color .12s ease;
+}
+
+#subdivBtnIcone{
+display:flex;
+align-items:center;
+pointer-events:none;
+}
+
+#subdivBtn .figuras{
+display:block;
+height:25px;
+width:auto;
+}
+
+#subdivBtn.aberto{
+background:#232323;
+border-color:#3a3a3a;
+}
+
+#subdivBtn.aberto .meterSeta{
+transform:rotate(180deg);
+}
+
+#subdivPainel{
+width:292px;
+transform-origin:top left;
+}
+
+.cpGrade_subdiv{
+grid-template-columns:1fr 1fr;
+}
+
+.cpChip.cpNota{
+flex-direction:row;
+justify-content:flex-start;
+gap:8px;
+height:58px;
+padding:0 8px;
+}
+
+.cpNotaFig{
+flex:0 0 30px;
+display:flex;
+justify-content:center;
+}
+
+.cpNotaFig .figuras{
+display:block;
+height:32px;
+width:auto;
+max-width:30px;
+}
+
+.cpNotaTexto{
+display:flex;
+flex-direction:column;
+align-items:flex-start;
+gap:4px;
+text-align:left;
+}
+
+.cpNotaNome{
+font-size:12px;
+font-weight:bold;
+}
+
+.cpNotaDesc{
+font-size:10px;
+color:var(--dim);
+}
+
+.cpChip.sel .cpNotaDesc{
+color:var(--good);
+}
+
+/* "Outro…": tracejada, porque ainda não é fórmula nenhuma */
+.cpChip.cpNovo{
+background:transparent;
+border-style:dashed;
+border-color:#3a3a3a;
+color:#9a9a9a;
+}
+
+.cpMais{
+font-size:19px;
+line-height:18px;
+}
+
+.cpNovoNome{
+font-size:10px;
+letter-spacing:1px;
+}
+
+/*
+v16.0 — buzina apertada: acende em ciano, a cor do tempo 1 no
+app todo. Vem antes do .fora de propósito: um tap fora da curva
+continua vermelho, mesmo na buzina.
+*/
+#tap.active.buzina{
+box-shadow:0 0 25px var(--acento);
+}
+
+#tap.active.buzina #buzina{
+background:radial-gradient(circle at 50% 30%, #1f3a34 0%, #12261f 60%, #0b1612 100%);
+box-shadow:
+0 0 0 3px #0a0a0a,
+0 0 0 4px var(--acento),
+0 0 14px rgba(0,255,204,.45);
+}
+
 #tap.active.fora{
 background:#2a1212;
 box-shadow:0 0 25px var(--bad);
@@ -1789,6 +2229,22 @@ flex:0 0 46px;
 width:46px;
 }
 
+#colCompasso #meterBtn{
+height:35px;
+}
+
+#subdivBtn{
+height:35px;
+}
+
+#subdivBtn .figuras{
+height:23px;
+}
+
+#buzina.vazia #buzinaTexto{
+letter-spacing:1px;
+}
+
 #compostoBtn{
 width:46px;
 font-size:11px;
@@ -1810,6 +2266,10 @@ font-size:42px;
 
 #bpmRow.dividido #bpmReal{
 font-size:35px;
+}
+
+#buzina.vazia #buzinaTexto{
+letter-spacing:1px;
 }
 
 /* roda de 170px: a fileira continua com a altura da coluna de opções */
@@ -2008,7 +2468,7 @@ em 105,105; TAP raio 75; aro de 80 a 104; roda 210 x 195.
 </svg>
 </button>
 
-<button id="tap">TAP</button>
+<button id="tap"><span id="tapRotulo">TAP</span><span id="buzina" aria-hidden="true"><svg class="buzinaIcone" viewBox="0 0 17 11" focusable="false"><path fill="currentColor" d="M1 4.2h2.4v2.6H1z M3.4 4.6h4.9v1.8H3.4z M8.3 4.6 15.8 1.1v8.8L8.3 6.4z"/></svg><span id="buzinaTexto">AUTO</span></span></button>
 
 <button id="bpmUp" class="paddle paddleRight" title="Aumentar BPM" aria-label="Aumentar BPM">
 <svg viewBox="105 105 105 90" aria-hidden="true" focusable="false">
@@ -2033,18 +2493,28 @@ em 105,105; TAP raio 75; aro de 80 a 104; roda 210 x 195.
 
 <div id="resetRow">
 
-<select id="subdiv" class="seletorMini" title="Subdivisão">
+<!--
+v16.2 — como o do compasso: o <select> guarda a escolha, escondido,
+e o botão abre o painel com as figuras dentro da página.
+-->
+<select id="subdiv" class="seletorOculto" title="Subdivisão" tabindex="-1" aria-hidden="true">
 <option value="1" selected>&#9833;</option>
 <option value="2">&#9834;</option>
 <option value="3">&#9834;&#179;</option>
 <option value="4">&#9836;</option>
 </select>
+<button id="subdivBtn" class="seletorMini" title="Subdivisão" aria-haspopup="listbox" aria-expanded="false" aria-controls="subdivPainel"><span id="subdivBtnIcone"></span><svg class="meterSeta" viewBox="0 0 7 5" aria-hidden="true" focusable="false"><path d="M.6.8 3.5 4 6.4.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 
 <button id="reset" class="resetButton">RESET</button>
 
 <div id="colCompasso">
 <button id="compostoBtn" title="Contagem do compasso composto">6</button>
-<select id="meter" class="seletorMini" title="Compasso">
+<!--
+v16.1 — o <select> continua guardando a escolha (todo o app lê
+dele), mas fica escondido: quem aparece é o botão, e a lista abre
+num painel dentro da página, e não mais por cima da tela inteira.
+-->
+<select id="meter" class="seletorOculto" title="Compasso" tabindex="-1" aria-hidden="true">
 <option value="0" selected>1/4</option>
 <option value="2">2/4</option>
 <option value="3">3/4</option>
@@ -2059,11 +2529,19 @@ em 105,105; TAP raio 75; aro de 80 a 104; roda 210 x 195.
 <option value="9" data-composto="3+3+3">9/8</option>
 <option value="12" data-composto="3+3+3+3">12/8</option>
 <option value="4" id="optPersonalizado" class="oculta">—</option>
+<option value="auto">AUTO 1</option>
+<option value="auto2">AUTO 2</option>
 <option value="custom">Outro…</option>
 </select>
+<button id="meterBtn" class="seletorMini" title="Fórmula de compasso" aria-haspopup="listbox" aria-expanded="false" aria-controls="compassoPainel"><span id="meterBtnNum">1</span><span id="meterBtnDen">4</span><svg class="meterSeta" viewBox="0 0 7 5" aria-hidden="true" focusable="false"><path d="M.6.8 3.5 4 6.4.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 </div>
 
 </div>
+
+<!-- v16.1 — lista de fórmulas, aberta pelo botão do compasso;
+     v16.2 — e as figuras da subdivisão, abertas pelo botão da esquerda -->
+<div id="compassoPainel" class="painelEscolha" role="listbox" aria-label="Fórmula de compasso" hidden></div>
+<div id="subdivPainel" class="painelEscolha" role="listbox" aria-label="Subdivisão do tempo" hidden></div>
 
 </div>
 <!-- fim da barra fixa -->
@@ -2340,7 +2818,7 @@ em 105,105; TAP raio 75; aro de 80 a 104; roda 210 x 195.
 </div>
 
 <div id="credits">
-Tap Tempo Trainer • Versão 15.3<br>
+Tap Tempo Trainer • Versão 16.2<br>
 Criado por Saulo Henrique Evangelista Fernandes • 2026
 </div>
 
@@ -2554,6 +3032,17 @@ let nextBeatTime = 0
 let beatCounter  = 0
 
 let beatsPerBar = 0        // 0 = livre, sem acentuação
+
+/*
+v16.0 — estado do modo AUTO (ver COMPASSO AUTO). Fica aqui, com o
+resto do estado, porque o tap() consulta.
+*/
+let autoFormula   = 0         // fórmula escolhida pela buzina: 2, 3 ou 4 (0 = nenhuma)
+let autoContagem  = 0         // tempos desde a última buzina; a buzina é o 1 (0 = sem taps)
+let autoMostrando = 0         // o que a buzina mostra agora (0 = "AUTO")
+let autoUltimoTap = -Infinity
+let autoPos       = 0         // posição do último tap no compasso (0 = tempo 1)
+let autoBuzinaPendente = false  // o tap que está entrando foi na buzina
 let subdivision = 1
 
 /* instante do último tap, no relógio do AudioContext */
@@ -3007,7 +3496,11 @@ O próximo beat vai um tempo à frente (nunca "agora"), para que
 ele seja previsto e a compensação de latência possa atuar. Os
 dois primeiros tempos saem calados, pelo scheduler.
 */
-function resyncMetronome(){
+/* v16.0 — pos: em que tempo do compasso o tap caiu (0 = tempo 1).
+   Fora do AUTO é sempre 0, como antes */
+function resyncMetronome(pos){
+
+pos = pos || 0
 
 audioCtx.resume()
 
@@ -3019,9 +3512,9 @@ cancelScheduled()
 
 metronomeRunning = true
 
-/* o tap é o tempo 1 → índice 0 */
+/* o tap é o tempo 1 → índice 0 (no AUTO, o tempo em que ele caiu) */
 lastTapAudioTime = audioCtx.currentTime
-beatCounter = 1
+beatCounter = pos + 1
 nextBeatTime = lastTapAudioTime + interval
 
 /*
@@ -3035,7 +3528,7 @@ estudoDegrauEm = 1
 /* a grade visual começa no tap que acabou de acontecer */
 gridOrigin = {
 time: lastTapAudioTime,
-index: 0,
+index: pos,
 interval: interval
 }
 
@@ -3630,6 +4123,10 @@ function tap(){
 
 audioCtx.resume()
 
+/* v16.0 — no AUTO, a posição deste tap no compasso vem da contagem
+   desde a buzina: só a buzina é o tempo 1 */
+const posNoCompasso = autoAtivo() ? autoRegistrarTap() : 0
+
 /*
 Qualquer pisada cala o metrônomo pela janela de silêncio.
 
@@ -3655,8 +4152,10 @@ cancelScheduled()
 O pulso acompanha a pisada, não a média: acende agora, no
 instante exato do tap. O tap é sempre o tempo 1, então usa
 a cor de acento quando há fórmula de compasso.
+
+v16.0 — no AUTO, só quando o tap cai no tempo 1.
 */
-pulsarReset(beatsPerBar > 0)
+pulsarReset(beatsPerBar > 0 && posNoCompasso === 0)
 
 /* trecho anterior já fechado: este tap começa um novo */
 if(trechoFechado){
@@ -3703,7 +4202,7 @@ tapTimes.push(now)
 lastTap = now
 
 if(tapCount >= 5){
-resyncMetronome()
+resyncMetronome(posNoCompasso)
 }
 
 }
@@ -5264,6 +5763,9 @@ updateGMeter(null)
 /* o RESET é o único que apaga os trechos */
 trechos = []
 trechoFechado = false
+
+/* v16.0 — a contagem da buzina recomeça; a fórmula escolhida fica */
+autoZerar()
 atualizarListaTrechos()
 updateSegBar()
 
@@ -6205,9 +6707,8 @@ return true
 
 function aplicarCompasso(){
 
-beatsPerBar = parseInt(meterSelect.value, 10)
-
-if(!isFinite(beatsPerBar)) beatsPerBar = 0
+/* v16.0 — no AUTO, vale a fórmula que a buzina escolheu */
+beatsPerBar = beatsDoSeletor()
 
 aplicarGrupos()
 
@@ -6215,12 +6716,18 @@ aplicarGrupos()
 montarBarraCompasso()
 atualizarBalaoFormula()
 atualizarBotaoComposto()
+atualizarAuto()   // v16.0
+atualizarBotaoCompasso()   // v16.1
 
 meterAnterior = meterSelect.selectedIndex
 
 }
 
 meterSelect.onchange = ()=>{
+
+/* v16.0 — escolher AUTO começa uma detecção nova, sem fórmula
+   (v16.1: vale pro AUTO 1 e pro AUTO 2) */
+if(autoAtivo()) autoFormula = 0
 
 if(meterSelect.value === "custom"){
 
@@ -6234,6 +6741,642 @@ return
 aplicarCompasso()
 
 }
+
+/* =====================================
+COMPASSO AUTO (v16.0; AUTO 2 na v16.1)
+===================================== */
+
+/*
+Modos AUTO da fórmula de compasso. Nos dois, o TAP vira volante e
+ganha uma buzina no meio: os taps no aro (fora da buzina) são os
+tempos e a BUZINA É O TEMPO 1. O que muda é como a fórmula sai.
+
+AUTO 1 (v16.0) — RODÍZIO
+A buzina conta os tempos desde a última vez que foi apertada:
+ela é o 1, o tap seguinte mostra 2/4, depois 3/4, depois 4/4 (e
+o rodízio continua: 2/4, 3/4, 4/4…). Apertar a buzina escolhe a
+fórmula que ESTÁ ESCRITA nela. Quem aperta a buzina no tempo 1
+seguinte pega exatamente o compasso que acabou de passar.
+
+Contar desde a buzina, e não num rodízio solto, é o que faz o
+3/4 funcionar: num rodízio de três que nunca recomeça, o 1 de
+uma música em 3/4 cairia sempre no mesmo número.
+
+AUTO 2 (v16.1) — CONTAGEM
+Não há rodízio: o app conta os tempos entre uma buzina e a
+seguinte, e a fórmula é essa contagem. Num 3/4: buzina (1), aro
+(2), aro (3), buzina — deu 3, fica 3/4. Vale de 2 a 12 tempos,
+sempre sobre 4. Enquanto você tapeia, a buzina mostra o número
+do tempo (2, 3, 4…); ao fechar o compasso, mostra a fórmula.
+A primeira buzina só marca o 1: não houve compasso antes dela
+pra contar.
+
+Regras comuns:
+- apertar a buzina = um tap como outro qualquer (entra no BPM)
+  + este tap é o tempo 1
+- os taps no aro NÃO mexem no tempo 1: cada um é o tempo seguinte
+  da contagem. Fora do AUTO continua tudo como sempre — todo tap
+  é tempo 1
+- os números só andam com os taps. Parou de tapear, a buzina
+  volta a mostrar a fórmula escolhida (ou o nome do modo)
+- o modo continua AUTO depois da escolha: dá pra apertar a
+  buzina de novo em outro tempo 1 pra corrigir ou trocar
+- voltar a tapear depois de uma pausa, com o metrônomo tocando
+  numa fórmula já escolhida, retoma a contagem da posição em que
+  a grade está — a pausa não muda o tempo 1
+- o pedal (Bluetooth ou setas do teclado) é tap no aro
+
+Tudo o que mexe na tela vai para depois do tap (microtarefa ou
+próximo quadro): o instante do tap é medido sem esperar desenho.
+*/
+const buzinaEl    = document.getElementById("buzina")
+const buzinaTexto = document.getElementById("buzinaTexto")
+
+const AUTO_NOVA_SEQUENCIA_MS = 2000   // mesmo limite do filtro de taps do tap()
+const AUTO_TAP_DUPLO_MS      = 120    // idem: mais perto que isso é a mesma pisada
+const AUTO2_MAXIMO           = 12     // AUTO 2: mais tempos que isso não fecha compasso
+
+let autoTimerVolta = null
+let autoQuadro = null
+let autoTipoMostrado = "escolhida"
+let autoAncorado = false   // houve um tempo 1 de referência nesta sequência de taps
+
+function autoAtivo(){
+return meterSelect.value === "auto" || meterSelect.value === "auto2"
+}
+
+/* 1 = rodízio (v16.0), 2 = contagem (v16.1) */
+function autoModo(){
+return meterSelect.value === "auto2" ? 2 : 1
+}
+
+/* tempos por compasso do que está no seletor; no AUTO, o da buzina */
+function beatsDoSeletor(){
+if(autoAtivo()) return autoFormula
+const n = parseInt(meterSelect.value, 10)
+return isFinite(n) ? n : 0
+}
+
+/* AUTO 1: contagem desde a buzina → fórmula candidata: 2, 3, 4, 2, 3, 4… */
+function autoCandidata(contagem){
+return 2 + ((contagem - 2) % 3)
+}
+
+/* posição (0 = tempo 1) do tempo da grade mais perto de agora */
+function autoPosicaoNaGrade(){
+if(!(gridOrigin.interval > 0) || beatsPerBar <= 0) return 0
+const k = Math.round((audioCtx.currentTime - gridOrigin.time) / gridOrigin.interval)
+const abs = gridOrigin.index + k
+return ((abs % beatsPerBar) + beatsPerBar) % beatsPerBar
+}
+
+/*
+Buzina com o metrônomo já tocando: o tempo da grade mais perto
+do toque passa a ser o 1. Só muda a NUMERAÇÃO dos tempos — a
+grade continua no mesmo lugar, sem tranco no andamento. Serve
+quando o tap não reancora a grade (depois de uma pausa, ou nos
+quatro primeiros taps de um trecho); quando reancora, o
+resyncMetronome() põe a buzina no tempo 1 de qualquer jeito.
+*/
+function autoRefasear(){
+if(!(gridOrigin.interval > 0) || beatsPerBar <= 0) return
+const pos = autoPosicaoNaGrade()
+const delta = (beatsPerBar - pos) % beatsPerBar
+if(delta === 0) return
+gridOrigin = {
+time: gridOrigin.time,
+index: gridOrigin.index + delta,
+interval: gridOrigin.interval
+}
+beatCounter += delta
+/* o exercício volta a contar do início deste compasso, como num tap */
+estudoDegrauEm = beatCounter - (beatCounter % beatsPerBar)
+}
+
+/* a fórmula escolhida pela buzina passa a valer no metrônomo todo */
+function definirFormulaAuto(n){
+autoFormula = n
+beatsPerBar = n
+aplicarGrupos()
+/* barra, balão, botão de composto e preferências: depois do tap */
+queueMicrotask(()=>{
+montarBarraCompasso()
+atualizarBalaoFormula()
+atualizarBotaoComposto()
+salvarPrefs()
+})
+}
+
+/*
+O que a buzina mostra, conforme o tipo:
+  "escolhida"  a fórmula escolhida (ciano), ou o nome do modo
+  "contando"   AUTO 1: a fórmula candidata do rodízio (2/4…)
+  "numero"     AUTO 2: o número do tempo (2, 3, 4…)
+*/
+function desenharBuzina(){
+autoQuadro = null
+const v = autoMostrando
+const tipo = autoTipoMostrado
+let texto
+if(tipo === "numero"){
+texto = v > AUTO2_MAXIMO ? (AUTO2_MAXIMO + "+") : String(v)
+}else if(v){
+texto = v + "/4"
+}else{
+texto = "AUTO " + autoModo()
+}
+buzinaTexto.textContent = texto
+buzinaEl.classList.toggle("vazia", !v)
+buzinaEl.classList.toggle("escolhida", tipo === "escolhida" && v > 0)
+buzinaEl.classList.toggle("numero", tipo === "numero")
+buzinaEl.classList.toggle("passou", tipo === "numero" && v > AUTO2_MAXIMO)
+}
+
+/* troca o que a buzina mostra; o desenho sai no próximo quadro */
+function mostrarNaBuzina(valor, tipo, pular){
+autoMostrando = valor
+autoTipoMostrado = tipo
+if(autoQuadro === null) autoQuadro = requestAnimationFrame(desenharBuzina)
+if(pular && buzinaTexto.animate){
+buzinaTexto.animate(
+[{ transform:"scale(1.2)" }, { transform:"scale(1)" }],
+{ duration:140, easing:"ease-out" })
+}
+}
+
+/* parou de tapear: a buzina volta a mostrar a fórmula escolhida */
+function autoArmarVolta(){
+if(autoTimerVolta !== null) clearTimeout(autoTimerVolta)
+const prazo = Math.min(2000, Math.max(600, 1.6 * 60000 / bpmMetronome))
+autoTimerVolta = setTimeout(()=>{
+autoTimerVolta = null
+if(autoMostrando !== autoFormula || autoTipoMostrado !== "escolhida"){
+mostrarNaBuzina(autoFormula, "escolhida", false)
+}
+}, prazo)
+}
+
+/*
+Chamada pelo tap() a cada tap no modo AUTO, antes de qualquer
+outra coisa. Atualiza a contagem e devolve a posição deste tap
+no compasso (0 = tempo 1), que o tap() usa no pulso e na
+reancoragem do metrônomo.
+*/
+function autoRegistrarTap(){
+
+const agora = performance.now()
+const naBuzina = autoBuzinaPendente
+const desde = agora - autoUltimoTap
+
+/* duas leituras da mesma pisada: não conta duas vezes */
+if(desde < AUTO_TAP_DUPLO_MS) return autoPos
+
+autoUltimoTap = agora
+
+/* este tap continua a sequência anterior (sem pausa no meio)? */
+const seguida = autoContagem > 0 && desde <= AUTO_NOVA_SEQUENCIA_MS
+const modo = autoModo()
+
+if(naBuzina){
+
+if(modo === 1){
+/* AUTO 1: vale o que está escrito na buzina */
+const escolhida = autoMostrando
+if(escolhida > 0) definirFormulaAuto(escolhida)
+}else if(seguida && autoAncorado && autoContagem >= 2 && autoContagem <= AUTO2_MAXIMO){
+/* AUTO 2: a fórmula é quantos tempos houve desde a buzina anterior */
+definirFormulaAuto(autoContagem)
+}
+
+autoContagem = 1
+autoPos = 0
+autoAncorado = true
+
+if(metronomeRunning) autoRefasear()
+
+mostrarNaBuzina(autoFormula, "escolhida", true)
+
+}else{
+
+if(!seguida){
+/* começo de uma sequência de taps */
+if(metronomeRunning && beatsPerBar > 0){
+/* a grade diz em que tempo estamos */
+autoPos = autoPosicaoNaGrade()
+autoContagem = autoPos + 1
+autoAncorado = true
+}else{
+/* AUTO 1 conta este tap como 1; o AUTO 2 espera a buzina */
+autoContagem = 1
+autoPos = 0
+autoAncorado = (modo === 1)
+}
+}else{
+autoContagem++
+autoPos = beatsPerBar > 0 ? (autoContagem - 1) % beatsPerBar : 0
+}
+
+if(modo === 1){
+if(autoContagem >= 2){
+mostrarNaBuzina(autoCandidata(autoContagem), "contando", true)
+}else{
+mostrarNaBuzina(autoFormula, "escolhida", false)
+}
+}else{
+if(autoAncorado && autoContagem >= 2){
+mostrarNaBuzina(autoContagem, "numero", true)
+}else{
+mostrarNaBuzina(autoFormula, "escolhida", false)
+}
+}
+
+}
+
+autoArmarVolta()
+
+return autoPos
+
+}
+
+/* zera a contagem (RESET, troca de fórmula) e mostra a escolhida */
+function autoZerar(){
+autoContagem = 0
+autoPos = 0
+autoAncorado = false
+autoUltimoTap = -Infinity
+if(autoTimerVolta !== null){
+clearTimeout(autoTimerVolta)
+autoTimerVolta = null
+}
+mostrarNaBuzina(autoFormula, "escolhida", false)
+}
+
+/* liga ou desliga a cara de AUTO: a buzina no TAP */
+function atualizarAuto(){
+tapButton.classList.toggle("auto", autoAtivo())
+autoZerar()
+}
+
+/* a buzina é o círculo do meio: o toque conta pela distância ao centro dela */
+function toqueNaBuzina(e){
+const r = buzinaEl.getBoundingClientRect()
+if(!r.width) return false
+const dx = e.clientX - (r.left + r.width / 2)
+const dy = e.clientY - (r.top + r.height / 2)
+return Math.hypot(dx, dy) <= r.width / 2 + 2
+}
+
+/* =====================================
+SELETOR DE COMPASSO NA PÁGINA (v16.1)
+===================================== */
+
+/*
+A lista nativa do <select> abria por cima da tela inteira. Agora
+a escolha abre num painel dentro da própria barra, logo abaixo do
+botão, com as fórmulas em pastilhas — como numa partitura, o
+numerador em cima do denominador.
+
+O <select id="meter"> continua existindo, escondido: é ele que
+guarda a escolha, e todo o resto do app (preferências,
+repertório, compasso personalizado, estudo) segue lendo dele
+como sempre. O painel só escreve nele e dispara o "change" — o
+mesmo caminho de quando a escolha era feita na lista nativa.
+
+Grupos: simples (x/4), compostos e irregulares (x/8),
+detectar (AUTO 1 e AUTO 2) e outro (o personalizado, se já
+existir, e "Outro…", que segue perguntando a fórmula).
+*/
+const meterBtn       = document.getElementById("meterBtn")
+const meterBtnNum    = document.getElementById("meterBtnNum")
+const meterBtnDen    = document.getElementById("meterBtnDen")
+const compassoPainel = document.getElementById("compassoPainel")
+const topbarEl       = document.getElementById("topbar")
+
+const AUTO_DESCRICAO = {
+auto:  "escolhe no rodízio",
+auto2: "conta os tempos"
+}
+
+/* o botão mostra a escolha como na partitura: número em cima do outro */
+function atualizarBotaoCompasso(){
+const opcao = meterSelect.options[meterSelect.selectedIndex]
+if(!opcao) return
+if(opcao.value === "auto" || opcao.value === "auto2"){
+meterBtnNum.textContent = "AUTO"
+meterBtnDen.textContent = opcao.value === "auto2" ? "2" : "1"
+meterBtn.classList.add("modoAuto")
+}else{
+const partes = opcao.text.split("/")
+meterBtnNum.textContent = partes[0] || ""
+meterBtnDen.textContent = partes[1] || ""
+meterBtn.classList.remove("modoAuto")
+}
+meterBtn.title = "Fórmula de compasso: " + opcao.text
+}
+
+function pastilhaFracao(num, den){
+return '<span class="cpNum">' + escaparHtml(num) + '</span>'
++ '<span class="cpDen">' + escaparHtml(den) + '</span>'
+}
+
+/* monta o painel a partir das opções do <select> (inclui o personalizado) */
+function montarPainelCompasso(){
+
+const grupos = { simples:[], compostos:[], detectar:[], outro:[] }
+
+for(let i = 0; i < meterSelect.options.length; i++){
+
+const op = meterSelect.options[i]
+if(op.classList.contains("oculta")) continue
+
+let grupo
+if(op.value === "auto" || op.value === "auto2") grupo = "detectar"
+else if(op.value === "custom" || op.getAttribute("data-personalizado") === "1") grupo = "outro"
+else if(/\/4$/.test(op.text)) grupo = "simples"
+else grupo = "compostos"
+
+grupos[grupo].push({ op:op, i:i })
+
+}
+
+const titulos = {
+simples: "Simples",
+compostos: "Compostos e irregulares",
+detectar: "Detectar tocando",
+outro: "Outro"
+}
+
+let html = '<div class="cpSeta"></div><div class="cpConteudo">'
+
+for(const chave of ["simples", "compostos", "detectar", "outro"]){
+
+if(!grupos[chave].length) continue
+
+html += '<div class="cpTitulo">' + titulos[chave] + '</div>'
+html += '<div class="cpGrade cpGrade_' + chave + '">'
+
+for(const item of grupos[chave]){
+
+const op = item.op
+const sel = (item.i === meterSelect.selectedIndex)
+const classes = ["cpChip"]
+let miolo
+
+if(chave === "detectar"){
+classes.push("cpAuto")
+miolo = '<svg class="cpBuzina" viewBox="0 0 17 11" aria-hidden="true">'
++ '<path fill="currentColor" d="M1 4.2h2.4v2.6H1z M3.4 4.6h4.9v1.8H3.4z M8.3 4.6 15.8 1.1v8.8L8.3 6.4z"/></svg>'
++ '<span class="cpAutoNome">' + escaparHtml(op.text) + '</span>'
++ '<span class="cpAutoDesc">' + AUTO_DESCRICAO[op.value] + '</span>'
+}else if(op.value === "custom"){
+classes.push("cpNovo")
+miolo = '<span class="cpMais">+</span><span class="cpNovoNome">outro</span>'
+}else{
+const partes = op.text.split("/")
+miolo = pastilhaFracao(partes[0] || "", partes[1] || "")
+}
+
+if(sel) classes.push("sel")
+
+html += '<button type="button" class="' + classes.join(" ") + '" role="option"'
++ ' aria-selected="' + sel + '" data-indice="' + item.i + '"'
++ ' title="' + escaparHtml(op.value === "custom" ? "Outra fórmula…" : op.text) + '">'
++ miolo + '</button>'
+
+}
+
+html += '</div>'
+
+}
+
+compassoPainel.innerHTML = html + '</div>'
+
+}
+
+/*
+v16.2 — os painéis de escolha (compasso e subdivisão) funcionam do
+mesmo jeito; este é o mecanismo comum.
+
+O painel fica dentro da barra fixa (que é "sticky" e por isso
+posiciona o painel) e abre logo abaixo do botão: alinhado pela
+direita do botão (compasso, à direita do RESET) ou pela esquerda
+(subdivisão, à esquerda do RESET), sem passar da borda da tela.
+Abrir um fecha o outro.
+*/
+const paineisEscolha = []
+
+function posicionarPainelEscolha(p){
+
+const barra = topbarEl.getBoundingClientRect()
+const bt = p.botao.getBoundingClientRect()
+const largura = p.painel.offsetWidth
+const seta = p.painel.querySelector(".cpSeta")
+const centro = bt.left + bt.width / 2
+
+p.painel.style.top = (bt.bottom - barra.top + 9) + "px"
+
+if(p.alinhar === "direita"){
+let direita = barra.right - bt.right
+const esquerdaNaTela = bt.right - largura
+if(esquerdaNaTela < 8) direita -= (8 - esquerdaNaTela)
+p.painel.style.right = direita + "px"
+p.painel.style.left = "auto"
+/* a setinha aponta pro meio do botão */
+if(seta){
+seta.style.right = (barra.right - direita - centro - 6) + "px"
+seta.style.left = "auto"
+}
+}else{
+let esquerda = bt.left - barra.left
+const limite = window.innerWidth - 8
+if(bt.left + largura > limite) esquerda -= (bt.left + largura - limite)
+p.painel.style.left = esquerda + "px"
+p.painel.style.right = "auto"
+if(seta){
+seta.style.left = (centro - (barra.left + esquerda) - 6) + "px"
+seta.style.right = "auto"
+}
+}
+
+/* telas baixas: o painel rola por dentro em vez de passar da tela */
+const sobra = window.innerHeight - bt.bottom - 18
+const conteudo = p.painel.querySelector(".cpConteudo")
+if(conteudo) conteudo.style.maxHeight = Math.max(160, sobra) + "px"
+
+}
+
+function criarPainelEscolha(botao, painel, alinhar, montar, escolher){
+
+const p = { botao: botao, painel: painel, alinhar: alinhar }
+
+p.aberto = ()=> painel.classList.contains("aberto")
+
+p.abrir = ()=>{
+paineisEscolha.forEach(outro => { if(outro !== p) outro.fechar() })
+montar()
+painel.hidden = false
+posicionarPainelEscolha(p)
+/* um quadro depois, pra transição de entrada acontecer */
+requestAnimationFrame(()=> painel.classList.add("aberto"))
+botao.classList.add("aberto")
+botao.setAttribute("aria-expanded", "true")
+}
+
+p.fechar = ()=>{
+if(painel.hidden) return
+painel.classList.remove("aberto")
+botao.classList.remove("aberto")
+botao.setAttribute("aria-expanded", "false")
+setTimeout(()=>{
+if(!p.aberto()) painel.hidden = true
+}, 140)
+}
+
+botao.addEventListener("click", ()=>{
+if(p.aberto()) p.fechar()
+else p.abrir()
+})
+
+/* escolher: quem chama escreve no <select> e dispara o "change" */
+painel.addEventListener("click", (e)=>{
+const chip = e.target.closest(".cpChip")
+if(!chip) return
+p.fechar()
+escolher(chip)
+})
+
+paineisEscolha.push(p)
+return p
+
+}
+
+/*
+Toque fora fecha o painel — e o toque segue valendo pro que foi
+tocado: um tap no TAP com o painel aberto é tap do mesmo jeito.
+*/
+document.addEventListener("pointerdown", (e)=>{
+for(const p of paineisEscolha){
+if(!p.aberto()) continue
+if(p.painel.contains(e.target) || p.botao.contains(e.target)) continue
+p.fechar()
+}
+}, true)
+
+document.addEventListener("keydown", (e)=>{
+if(e.key === "Escape") paineisEscolha.forEach(p => p.fechar())
+})
+
+window.addEventListener("resize", ()=> paineisEscolha.forEach(p => p.fechar()))
+
+/* o painel do compasso: escolher escreve no <select> e dispara o mesmo "change" de antes */
+const painelCompasso = criarPainelEscolha(meterBtn, compassoPainel, "direita", montarPainelCompasso, (chip)=>{
+const indice = parseInt(chip.getAttribute("data-indice"), 10)
+if(!isFinite(indice)) return
+if(indice === meterSelect.selectedIndex && meterSelect.value !== "custom") return
+meterSelect.selectedIndex = indice
+meterSelect.dispatchEvent(new Event("change"))
+})
+
+/* =====================================
+SELETOR DE SUBDIVISÃO NA PÁGINA (v16.2)
+===================================== */
+
+/*
+Mesma ideia do compasso: o <select id="subdiv"> fica escondido,
+guardando a escolha (o agendador, as preferências e o relatório
+seguem lendo dele), e o botão abre um painel na própria barra.
+
+Cada pastilha mostra o grupo de figuras que enche UM tempo,
+desenhado como numa partitura — hastes pra cima e barras ligando:
+uma semínima, duas colcheias, três colcheias de tercina (com o 3
+em cima) e quatro semicolcheias (barra dupla). Antes eram
+caracteres de música (♩ ♪ ♬), que cada celular desenha com uma
+fonte diferente; desenhadas aqui, ficam iguais em todo lugar.
+*/
+const subdivBtn      = document.getElementById("subdivBtn")
+const subdivBtnIcone = document.getElementById("subdivBtnIcone")
+const subdivPainel   = document.getElementById("subdivPainel")
+
+/* os mesmos nomes do relatório exportado */
+const SUBDIV_NOMES = { 1:"Semínima", 2:"Colcheia", 3:"Tercina", 4:"Semicolcheia" }
+
+/* as figuras de um tempo, em SVG: 40 de altura, largura conforme quantas */
+function figurasDoTempo(n){
+
+const PASSO = 9
+const CABECA_Y = 33
+const TOPO = (n === 3) ? 13 : 9      // a tercina desce um pouco pra caber o 3
+
+const xs = []
+for(let i = 0; i < n; i++) xs.push(4.2 + i * PASSO)
+
+const f = v => (Math.round(v * 100) / 100)
+let s = ""
+
+for(const x of xs){
+/* cabeça inclinada, como a de verdade, e a haste do lado direito */
+s += '<ellipse cx="' + f(x) + '" cy="' + CABECA_Y + '" rx="3.7" ry="2.7"'
++ ' transform="rotate(-22 ' + f(x) + ' ' + CABECA_Y + ')"/>'
+s += '<rect x="' + f(x + 2.45) + '" y="' + TOPO + '" width="1.25" height="' + f(CABECA_Y - TOPO - 0.5) + '"/>'
+}
+
+if(n >= 2){
+const x0 = xs[0] + 2.45
+const x1 = xs[n - 1] + 3.7
+s += '<rect x="' + f(x0) + '" y="' + TOPO + '" width="' + f(x1 - x0) + '" height="3"/>'
+if(n === 4){
+s += '<rect x="' + f(x0) + '" y="' + (TOPO + 5) + '" width="' + f(x1 - x0) + '" height="3"/>'
+}
+if(n === 3){
+s += '<text x="' + f((x0 + x1) / 2) + '" y="9" text-anchor="middle"'
++ ' font-family="Arial, sans-serif" font-size="9" font-weight="bold">3</text>'
+}
+}
+
+const largura = f(xs[n - 1] + 5.6)
+return '<svg class="figuras" viewBox="0 0 ' + largura + ' 40" aria-hidden="true" focusable="false">'
++ '<g fill="currentColor">' + s + '</g></svg>'
+
+}
+
+/* o botão mostra as figuras da subdivisão escolhida */
+function atualizarBotaoSubdiv(){
+const n = parseInt(subdivSelect.value, 10) || 1
+subdivBtnIcone.innerHTML = figurasDoTempo(n)
+subdivBtn.title = "Subdivisão: " + SUBDIV_NOMES[n]
+}
+
+function montarPainelSubdiv(){
+
+const atual = parseInt(subdivSelect.value, 10) || 1
+
+let html = '<div class="cpSeta"></div><div class="cpConteudo">'
+html += '<div class="cpTitulo">Subdivisão do tempo</div>'
+html += '<div class="cpGrade cpGrade_subdiv">'
+
+for(let n = 1; n <= 4; n++){
+const sel = (n === atual)
+html += '<button type="button" class="cpChip cpNota' + (sel ? ' sel' : '') + '" role="option"'
++ ' aria-selected="' + sel + '" data-valor="' + n + '" title="' + SUBDIV_NOMES[n] + '">'
++ '<span class="cpNotaFig">' + figurasDoTempo(n) + '</span>'
++ '<span class="cpNotaTexto">'
++ '<span class="cpNotaNome">' + SUBDIV_NOMES[n] + '</span>'
++ '<span class="cpNotaDesc">' + (n === 1 ? "só o tempo" : n + " por tempo") + '</span>'
++ '</span></button>'
+}
+
+subdivPainel.innerHTML = html + '</div></div>'
+
+}
+
+const painelSubdiv = criarPainelEscolha(subdivBtn, subdivPainel, "esquerda", montarPainelSubdiv, (chip)=>{
+const v = chip.getAttribute("data-valor")
+if(!v || v === subdivSelect.value) return
+subdivSelect.value = v
+subdivSelect.dispatchEvent(new Event("change"))
+})
+
+subdivSelect.addEventListener("change", atualizarBotaoSubdiv)
 
 /*
 O balão espelha o rótulo do seletor: 1/4, 2/4, 3/4, 4/4 ou
@@ -6263,6 +7406,12 @@ const partes = texto.split("/")
 
 formulaNum = partes[0] || ""   // guardado; o desenho usa o tempo atual
 formulaDen = partes[1] || ""
+
+/* v16.0 — no AUTO as fórmulas são sobre 4 (2/4, 3/4, 4/4…) */
+if(autoAtivo()){
+formulaNum = autoFormula ? String(autoFormula) : "1"
+formulaDen = "4"
+}
 
 }
 
@@ -6845,14 +7994,19 @@ btPedalLargadoPelaPagina = false
 }
 }
 
-tapButton.addEventListener("pointerdown", ()=>{
+tapButton.addEventListener("pointerdown", (e)=>{
+/* v16.0 — no AUTO, o círculo do meio é a buzina: este tap é o tempo 1 */
+const buzina = autoAtivo() && toqueNaBuzina(e)
+autoBuzinaPendente = buzina
 btTapLocal()
+autoBuzinaPendente = false
 tapButton.classList.toggle("fora", ultimoTapFora)
+tapButton.classList.toggle("buzina", buzina)
 tapButton.classList.add("active")
 })
 
-tapButton.addEventListener("pointerup",   ()=>tapButton.classList.remove("active","fora"))
-tapButton.addEventListener("pointerleave",()=>tapButton.classList.remove("active","fora"))
+tapButton.addEventListener("pointerup",   ()=>tapButton.classList.remove("active","fora","buzina"))
+tapButton.addEventListener("pointerleave",()=>tapButton.classList.remove("active","fora","buzina"))
 
 resetButton.onclick = ()=>{
 
@@ -8105,6 +9259,8 @@ const orig = meterSelect.options[i]
 
 /* pula "Outro\u2026" e a opção personalizada ainda vazia */
 if(orig.value === "custom") continue
+/* v16.0 — AUTO é modo de detectar, não fórmula de música */
+if(orig.value === "auto" || orig.value === "auto2") continue
 if(orig.classList.contains("oculta")) continue
 
 const op = document.createElement("option")
@@ -8115,6 +9271,13 @@ novoCompasso.appendChild(op)
 }
 
 novoCompasso.value = meterSelect.options[meterSelect.selectedIndex].text
+
+/* v16.0 — no AUTO, sugere a fórmula que a buzina escolheu (se ela
+   existir na lista; um 9/4 do AUTO 2, por exemplo, não existe) */
+if(autoAtivo()){
+novoCompasso.value = autoFormula ? (autoFormula + "/4") : "1/4"
+if(novoCompasso.selectedIndex < 0) novoCompasso.value = "1/4"
+}
 
 }
 
@@ -8724,6 +9887,7 @@ compassoTexto: meterSelect.options[meterSelect.selectedIndex].text,
 compassoGrupos: meterSelect.options[meterSelect.selectedIndex].getAttribute("data-composto") || "",
 compassoPersonalizado: meterSelect.options[meterSelect.selectedIndex].getAttribute("data-personalizado") === "1",
 compostoModo: compostoModo,
+autoFormula: autoFormula,     // v16.0
 subdivisao: subdivSelect.value,
 audio: audioEnabled,
 visualModo: visualModo,
@@ -8773,9 +9937,20 @@ break
 }
 }
 
+/* v16.1 — o "AUTO" da v16.0 virou "AUTO 1": casa pelo valor */
+if(prefs.compasso === "auto" || prefs.compasso === "auto2"){
+meterSelect.value = prefs.compasso
+}
+
 if(prefs.subdivisao) subdivSelect.value = prefs.subdivisao
 
 if(typeof prefs.compostoModo === "number") compostoModo = prefs.compostoModo
+
+/* v16.0 — a fórmula que a buzina tinha escolhido (v16.1: o AUTO 2
+   vai de 2 a 12) */
+if(Number.isInteger(prefs.autoFormula) && prefs.autoFormula >= 2 && prefs.autoFormula <= AUTO2_MAXIMO){
+autoFormula = prefs.autoFormula
+}
 
 if(typeof prefs.audio === "boolean"){
 audioEnabled = prefs.audio
@@ -8832,13 +10007,16 @@ bt.addEventListener("click", salvarPrefs)
 /* preferências primeiro; o resto da partida já lê os valores certos */
 aplicarPrefs()
 
-beatsPerBar = parseInt(meterSelect.value, 10)
+beatsPerBar = beatsDoSeletor()   // v16.0 — entende o AUTO
 subdivision = parseInt(subdivSelect.value, 10)
+atualizarBotaoSubdiv()   // v16.2
 aplicarGrupos()
 
 montarBarraCompasso()
 atualizarBalaoFormula()
 atualizarBotaoComposto()
+atualizarAuto()   // v16.0
+atualizarBotaoCompasso()   // v16.1
 
 /* =====================================
 APLICATIVO (v15.3)
@@ -8878,6 +10056,170 @@ rítmica para estudo musical e sincronização de tempo.
 
 Autor: Saulo Henrique Evangelista Fernandes
 Ano: 2026
+
+========================================================
+CHANGELOG v16.2
+========================================================
+
+SUBDIVISÃO NA PÁGINA
+• o seletor de subdivisão (à esquerda do RESET) ganhou o mesmo
+  tratamento do compasso: a lista nativa, que abria por cima da
+  tela inteira, deu lugar a um painel dentro da própria barra
+• cada pastilha mostra o grupo de figuras que enche UM tempo,
+  desenhado como numa partitura — hastes pra cima e barras
+  ligando: semínima, duas colcheias, tercina (com o 3 em cima)
+  e quatro semicolcheias (barra dupla). Ao lado, o nome e
+  quantos cliques cabem no tempo ("só o tempo", "2 por tempo"…)
+• as figuras são desenhadas em SVG. Antes eram caracteres de
+  música (♩ ♪ ♬), que cada celular desenha com uma fonte
+  diferente; agora ficam iguais em todo lugar
+• o botão mostra as figuras da subdivisão escolhida, com a mesma
+  setinha do botão do compasso
+• o painel abre pela esquerda, alinhado ao botão; a escolhida
+  acende em verde e o toque clareia em cinza, como no compasso
+• fecha ao escolher, com Esc ou com um toque fora (o toque fora
+  continua valendo). Abrir um painel fecha o outro
+
+POR DENTRO
+• o <select id="subdiv"> continua lá, escondido, guardando a
+  escolha: o agendador, as preferências e o relatório seguem
+  lendo dele como antes
+• o mecanismo dos painéis (abrir, posicionar, fechar com toque
+  fora ou Esc) virou um só, usado pelos dois: criarPainelEscolha()
+• sw.js: VERSAO 16.2
+
+========================================================
+CHANGELOG v16.1
+========================================================
+
+AUTO 1 E AUTO 2
+• o AUTO da v16.0 virou AUTO 1, sem mudar nada no jeito de usar
+  (rodízio 2/4, 3/4, 4/4; a buzina escolhe o que está escrito)
+• AUTO 2 é novo, com o mesmo layout: volante, buzina no meio,
+  taps no aro são os tempos e a buzina é o tempo 1. A diferença
+  é que não há rodízio — o app CONTA os tempos entre uma buzina
+  e a seguinte, e a fórmula é essa contagem
+• num 3/4: buzina (1), aro (2), aro (3), buzina → 3/4
+• vale de 2 a 12 tempos, sempre sobre 4 (2/4, 3/4… 12/4)
+• enquanto você tapeia, a buzina mostra o número do tempo (2, 3,
+  4…); ao fechar o compasso, mostra a fórmula em ciano. Passou
+  de 12, mostra "12+" e a buzina seguinte não fecha compasso:
+  só marca o tempo 1
+• a primeira buzina só marca o 1: não houve compasso antes dela
+  pra contar. Taps no aro antes dela não contam
+• buzina duas vezes seguidas (1 tempo só) não muda a fórmula
+• pausa de mais de 2 s quebra a contagem: a buzina depois dela
+  só marca o 1 — a não ser que o metrônomo esteja tocando numa
+  fórmula já escolhida, quando a contagem retoma pela grade
+• tudo o mais é igual ao AUTO 1: buzina entra no BPM, taps no
+  aro não mexem no tempo 1, refase sem tranco com o metrônomo
+  tocando, pedal conta como tap no aro, a buzina volta a mostrar
+  a fórmula quando você para de tapear
+• sem fórmula escolhida, a buzina mostra o nome do modo: AUTO 1
+  ou AUTO 2
+
+SELETOR DE COMPASSO NA PÁGINA
+• a lista nativa abria por cima da tela inteira. Agora o botão do
+  compasso abre um painel dentro da própria barra, logo abaixo
+  dele, com uma setinha apontando pro botão
+• as fórmulas viram pastilhas, como numa partitura: o numerador
+  em cima do denominador. Quatro grupos, com o título no mesmo
+  estilo dos painéis da página:
+    Simples                   1/4 a 7/4
+    Compostos e irregulares   3/8, 5/8, 6/8, 7/8, 9/8, 12/8
+    Detectar tocando          AUTO 1 e AUTO 2, com o ícone da
+                              buzina e o que cada um faz
+    Outro                     o personalizado, se existir, e
+                              "outro" (tracejada)
+• a escolhida acende em verde, como os botões ligados; apertar
+  uma pastilha só clareia em cinza
+• o próprio botão também mostra a fórmula empilhada (ou AUTO em
+  cima do número do modo), com uma setinha que vira pra cima
+  quando o painel está aberto
+• fecha ao escolher, com Esc ou com um toque fora. O toque fora
+  continua valendo: um tap no TAP com o painel aberto é tap
+• em tela baixa, o painel rola por dentro em vez de sair da tela
+• "Outro…" continua perguntando a fórmula e o agrupamento
+• por dentro: o <select> continua lá, escondido, guardando a
+  escolha — preferências, repertório, compasso personalizado e
+  estudo seguem lendo dele como antes. O painel só escreve nele
+  e dispara o mesmo "change" da lista nativa
+
+OUTROS
+• preferências: a fórmula do AUTO vai de 2 a 12; uma preferência
+  salva na v16.0 ("AUTO") abre como AUTO 1
+• o repertório não oferece AUTO 1 nem AUTO 2 como compasso de
+  música; ao incluir uma música no AUTO, sugere a fórmula que a
+  buzina escolheu (ou 1/4, se ela não estiver na lista)
+• o seletor de subdivisão (à esquerda do RESET) continua sendo a
+  lista nativa (mudou na v16.2)
+• sw.js: VERSAO 16.1
+
+========================================================
+CHANGELOG v16.0
+========================================================
+
+MODO AUTO DA FÓRMULA DE COMPASSO
+• nova opção AUTO no seletor de compasso (a primeira da lista).
+  Escolher AUTO começa uma detecção nova, ainda sem fórmula
+• no AUTO, o TAP vira volante e ganha uma buzina no meio — só no
+  AUTO; nas outras fórmulas o TAP é o de sempre
+• os taps no aro (fora da buzina) são os tempos; a BUZINA É O
+  TEMPO 1 e escolhe a fórmula que estiver escrita nela
+• a buzina conta os tempos desde a última vez que foi apertada:
+  ela é o 1, o tap seguinte mostra 2/4, depois 3/4, depois 4/4 (e
+  o rodízio continua: 2/4, 3/4, 4/4…). Apertando a buzina no
+  tempo 1 seguinte, ela está mostrando exatamente o compasso que
+  acabou de passar
+• contar desde a buzina, e não num rodízio solto, é o que faz o
+  3/4 funcionar: num rodízio de três que nunca recomeça, o 1 de
+  uma música em 3/4 cairia sempre no mesmo número
+• na prática: aperte a buzina num tempo 1, tapeie os outros
+  tempos no aro e aperte a buzina de novo no tempo 1 seguinte
+• apertar a buzina é um tap como outro qualquer: entra no BPM
+• vale o que está escrito na buzina, e não uma conta escondida:
+  se ela já voltou a mostrar a fórmula escolhida, apertar mantém
+  essa fórmula e só marca o tempo 1
+• o que a buzina mostra:
+    AUTO         ainda sem fórmula escolhida
+    3/4 ciano    a fórmula escolhida (em repouso)
+    2/4 branco   a contagem, enquanto você tapeia
+• os números só andam com os taps: parou de tapear (1,6 tempo,
+  entre 0,6 e 2 s), a buzina volta a mostrar a escolhida
+• o modo continua AUTO depois da escolha: dá pra apertar a buzina
+  em outro tempo 1 pra corrigir ou trocar o compasso
+• buzina apertada acende em ciano, a cor do tempo 1 no app todo
+  (tap fora da curva continua vermelho). O pulso do RESET também
+  só fica forte quando o tap cai no tempo 1
+• no AUTO, o nome TAP sobe pro alto do aro, como a marca de um
+  volante; a buzina tem 46% do TAP e um ícone de buzina
+• o pedal (Bluetooth ou setas do teclado) conta como tap no aro
+
+O TEMPO 1 NO AUTO
+• fora do AUTO, todo tap continua sendo tempo 1, como sempre
+• no AUTO, os taps no aro NÃO mexem no tempo 1: cada um é o tempo
+  seguinte da contagem, e o metrônomo é reancorado nesse tempo
+  (o resyncMetronome agora recebe a posição no compasso)
+• buzina com o metrônomo já tocando, num tap que não reancora a
+  grade (depois de uma pausa, ou nos quatro primeiros taps de um
+  trecho): o tempo da grade mais perto do toque vira o 1. Só muda
+  a numeração — a grade fica no mesmo lugar, sem tranco
+• voltar a tapear depois de uma pausa, numa fórmula já escolhida:
+  a contagem retoma da posição da grade, e o tempo 1 não muda
+• duas leituras da mesma pisada (menos de 120 ms) contam como uma
+• o que mexe na tela (buzina, barra de compasso, preferências)
+  é desenhado depois do tap: o instante do tap é medido sem
+  esperar desenho
+
+OUTROS
+• AUTO e a fórmula escolhida ficam salvos nas preferências
+• o repertório não oferece AUTO como compasso de música; ao
+  incluir uma música no AUTO, sugere a fórmula que a buzina
+  escolheu
+• o RESET zera a contagem da buzina; a fórmula escolhida fica
+• o seletor mostra "AUTO" com letra menor, pra caber ao lado da
+  seta
+• sw.js: VERSAO 16.0 — o cache da 15.3 é apagado na atualização
 
 ========================================================
 CHANGELOG v15.3
