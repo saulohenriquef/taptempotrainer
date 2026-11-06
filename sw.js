@@ -21,7 +21,7 @@ AO PUBLICAR UMA VERSÃO NOVA
   antigo e guarda tudo de novo. Mesmo sem trocar, a página nova
   chega pela rede — mas os ícones só se atualizam com a troca.
 */
-const VERSAO = "15.3"
+const VERSAO = "16.2"
 const CACHE = "tap-tempo-" + VERSAO
 
 const ARQUIVOS = [
